@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!-- ↓ この viewport 指定が正しく入っているか確認・修正してください -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Sudoku</title>
+    <link rel="stylesheet" href="style.css?v=3.0">
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
+</head>
+<body>
+
+    <!-- 1. 難易度選択ボタン -->
+    <div class="button-container">
+        <button id="btn-easy" onclick="setDifficulty('easy')">EASY</button>
+        <button id="btn-normal" onclick="setDifficulty('normal')">NORMAL</button>
+        <button id="btn-hard" onclick="setDifficulty('hard')">HARD</button>
+    </div>
+
+    <!-- 2. 操作・数字ボタン群 -->
+    <div id="controls">
+        <div class="action-row">
+            <button onclick="undo()">戻す</button>
+            <button id="btn-memo" onclick="handleMemoToggle()">メモ: OFF</button>
+            <button onclick="handleErase()">消去</button>
+            <button onclick="giveHint()">ヒント</button>
+            <button onclick="newGame()">New Game</button>
+        </div>
+
+        <div class="number-row">
+            <button onclick="handleNumberInput(1)">1</button>
+            <button onclick="handleNumberInput(2)">2</button>
+            <button onclick="handleNumberInput(3)">3</button>
+            <button onclick="handleNumberInput(4)">4</button>
+            <button onclick="handleNumberInput(5)">5</button>
+            <button onclick="handleNumberInput(6)">6</button>
+            <button onclick="handleNumberInput(7)">7</button>
+            <button onclick="handleNumberInput(8)">8</button>
+            <button onclick="handleNumberInput(9)">9</button>
+        </div>
+    </div>
+
+    <!-- 3. キャンバス領域（一番下に配置） -->
+    <div id="canvas-container"></div>
+
+    <script src="sketch.js?v=1.5"></script>
+
+    <!-- ★ サービスワーカーの登録スクリプト -->
+    <script>
+       if ('serviceWorker' in navigator) {
+         window.addEventListener('load', () => {
+         navigator.serviceWorker.register('./sw.js')
+           .then(reg => console.log('SW Registered!', reg))
+           .catch(err => console.error('SW Registration Failed!', err));
+        });
+     }
+    </script>
+
+</body>
+</html>
