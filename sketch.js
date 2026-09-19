@@ -30,8 +30,8 @@ const DIFFICULTIES = {
 };
 let difficulty = "normal";
 
-// カンマ区切りをやめ、単一の標準フォント名に変更します
-const MAIN_FONT = "Noto Sans JP";
+// 変更後 (OS標準フォントを指定):
+const MAIN_FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 function setup() {
     // スマホ画面幅から左右余白（計20px）を引いた幅でマス目を計算
