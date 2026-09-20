@@ -1,4 +1,6 @@
-/* リセット・共通設定 */
+/* ==========================================
+   1. リセット & 全体レイアウト
+   ========================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -10,8 +12,7 @@ body {
     flex-direction: column;
     align-items: center;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    padding: 15px 10px;
-    /* 背景グラデーション */
+    padding: 8px 10px;
     background: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%);
     color: #2c3e50;
     touch-action: manipulation;
@@ -20,119 +21,135 @@ body {
     min-height: 100vh;
 }
 
-/* ボタン単体にもタップ操作の最適化を適用する場合 */
+/* ==========================================
+   2. ボタン共通ベーススタイル
+   ========================================== */
 button {
     touch-action: manipulation;
+    font-family: inherit;
+    font-weight: 700;
+    color: #34495e;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1.5px solid #dcdde1;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-width: 0;
+    white-space: nowrap;
 }
 
-/* 1. 難易度選択ボタンエリア（上部） */
+button:active {
+    transform: translateY(2px) scale(0.97);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================
+   3. ボタンのアクティブ（ON）状態
+   ========================================== */
+.button-container button.active,
+#btn-memo.active,
+#btn-replay-play.active {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    color: #ffffff !important;
+    border-color: #2980b9 !important;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35) !important;
+}
+
+#btn-record.active-rec {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: #ffffff !important;
+    border-color: #c0392b !important;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35) !important;
+}
+
+/* ==========================================
+   4. 最上段：難易度 ＆ 記録・再生エリア
+   ========================================== */
 .button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 auto 8px auto;
+    width: 100%;
+    max-width: 500px;
+}
+
+.mode-row, .replay-row {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
-    margin: 5px 0 12px 0;
+    gap: 6px;
     width: 100%;
 }
 
-.button-container button {
-    padding: 8px 18px;
-    min-width: 85px;
-    font-size: 14px;
-    font-weight: bold;
-    color: #34495e;
-    background: rgba(255, 255, 255, 0.85);
-    border: 1.5px solid #dcdde1;
+.mode-row button, .replay-row button {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 12px;
     border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-/* 選択中の難易度ボタン */
-.button-container button.active,
-button.active {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: #ffffff;
-    border-color: #2980b9;
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
+.replay-sub-btn {
+    flex: 0 0 32px !important;
 }
 
-/* 2. 操作・数字ボタンエリア（上部） */
+.replay-counter {
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+    padding: 0 4px;
+}
+
+/* ==========================================
+   5. 中段：操作ボタン ＋ 数字キーコンテナ
+   ========================================== */
 #controls {
     width: 100%;
     max-width: 500px;
-    margin-bottom: 16px; /* 下にあるキャンバスとの間隔 */
+    margin: 0 auto 8px auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
 }
 
-/* ボタン基本デザイン */
-#controls button {
-    padding: 12px 0;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: inherit;
-    border: none;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px);
-    color: #34495e;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    transition: all 0.15s ease;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* アクションボタン行 */
 .action-row {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
+    width: 100%;
 }
 
 .action-row button {
     flex: 1;
-    font-size: 13px;
-    padding: 11px 0;
+    padding: 9px 0;
+    font-size: 12px;
+    border-radius: 8px;
 }
 
-/* 数字ボタン行（1〜9） */
 .number-row {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
-    gap: 3px; /* 隙間を6pxから3pxに少し詰める */
+    gap: 3px;
     width: 100%;
 }
 
 .number-row button {
     aspect-ratio: 1 / 1.1;
-    font-size: 24px !important; /* スマホ画面幅に収まる最適サイズ */
-    font-weight: 800 !important;
+    font-size: 20px;
+    font-weight: 800;
     color: #2980b9;
-    
-    /* Chromium系での溢れ（はみ出し）を防ぐ重要な設定 */
-    padding: 0 !important;      /* ボタン内部の横余白をゼロにする */
-    min-width: 0 !important;    /* ブラウザ固有の最小幅制限を解除 */
+    border-radius: 8px;
+    padding: 0;
     width: 100%;
 }
 
-/* タップ時の押し込みアニメーション */
-#controls button:active,
-.button-container button:active {
-    transform: translateY(2px) scale(0.97);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-}
-
-/* メモモードON時のハイライト */
-#btn-memo.active {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(52, 152, 219, 0.4);
-}
-
-/* 3. p5.js キャンバス領域（一番下・自動拡大） */
+/* ==========================================
+   6. 下段：キャンバス（数独盤面）
+   ========================================== */
 #canvas-container {
     width: 100%;
     max-width: 500px;

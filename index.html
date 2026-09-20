@@ -1,31 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
- <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sudoku</title>
-
-    <!-- PWA用設定 -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3498db">
-    <link rel="apple-touch-icon" href="icon-192.png">
-
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=6.0">
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
 </head>
-
 <body>
 
-    <!-- 1. 難易度選択ボタン -->
+    <!-- 1. 最上段：難易度 ＆ 記録・再生コントロール（2行に分割） -->
     <div class="button-container">
-        <button id="btn-easy" onclick="setDifficulty('easy')">EASY</button>
-        <button id="btn-normal" onclick="setDifficulty('normal')">NORMAL</button>
-        <button id="btn-hard" onclick="setDifficulty('hard')">HARD</button>
+        <!-- 難易度選択行 -->
+        <div class="mode-row">
+            <button id="btn-easy" onclick="setDifficulty('easy')">EASY</button>
+            <button id="btn-normal" onclick="setDifficulty('normal')">NORMAL</button>
+            <button id="btn-hard" onclick="setDifficulty('hard')">HARD</button>
+        </div>
+        <!-- 記録・再生コントロール行 -->
+        <div class="replay-row">
+            <button id="btn-record" onclick="handleRecordToggle()">記録: OFF</button>
+            <button id="btn-replay-play" onclick="toggleReplay()">再生</button>
+            <button class="replay-sub-btn" onclick="stepBackward()">◀</button>
+            <button class="replay-sub-btn" onclick="stepForward()">▶</button>
+            <span id="replay-status" class="replay-counter">0/0</span>
+        </div>
     </div>
 
-    <!-- 2. 操作・数字ボタン群 -->
+    <!-- 2. 中段：基本操作 ＋ 数字キー -->
     <div id="controls">
+        <!-- アクションボタン行 -->
         <div class="action-row">
             <button onclick="undo()">戻す</button>
             <button id="btn-memo" onclick="handleMemoToggle()">メモ: OFF</button>
@@ -34,6 +38,7 @@
             <button onclick="newGame()">New Game</button>
         </div>
 
+        <!-- 数字ボタン行（1〜9） -->
         <div class="number-row">
             <button onclick="handleNumberInput(1)">1</button>
             <button onclick="handleNumberInput(2)">2</button>
@@ -47,21 +52,9 @@
         </div>
     </div>
 
-    <!-- 3. キャンバス領域（一番下に配置） -->
+    <!-- 3. 下段：キャンバス領域 -->
     <div id="canvas-container"></div>
 
-    <script src="sketch.js?v=1.5"></script>
-
-    <!-- ★ サービスワーカーの登録スクリプト -->
-    <script>
-       if ('serviceWorker' in navigator) {
-         window.addEventListener('load', () => {
-         navigator.serviceWorker.register('./sw.js')
-           .then(reg => console.log('SW Registered!', reg))
-           .catch(err => console.error('SW Registration Failed!', err));
-        });
-     }
-    </script>
-
+    <script src="sketch.js?v=3.0"></script>
 </body>
 </html>
