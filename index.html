@@ -10,18 +10,22 @@
     <meta name="theme-color" content="#3498db">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=4.0">
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
 </head>
 <body>
 
-    <!-- 1. 最上段：難易度 ＆ 記録・再生コントロール -->
+    <!-- 1. 最上段：難易度 ＆ 問題入力 ＆ 記録・再生コントロール -->
     <div class="button-container">
-        <!-- 難易度選択行 -->
+        <!-- 難易度 ＋ 問題入力行 -->
         <div class="mode-row">
             <button id="btn-easy" onclick="setDifficulty('easy')">EASY</button>
             <button id="btn-normal" onclick="setDifficulty('normal')">NORMAL</button>
             <button id="btn-hard" onclick="setDifficulty('hard')">HARD</button>
+            <button id="btn-edit" onclick="toggleEditMode()">問題入力</button>
+            <span id="edit-cancel-container" style="display: none;">
+                <button onclick="cancelEditMode()">中止</button>
+            </span>
         </div>
         <!-- 記録・再生コントロール行 -->
         <div class="replay-row">
@@ -44,7 +48,7 @@
             <button onclick="newGame()">New Game</button>
         </div>
 
-        <!-- 数字ボタン行（1〜9）：id を追加 -->
+        <!-- 数字ボタン行（1〜9） -->
         <div class="number-row">
             <button id="btn-num-1" onclick="handleNumberInput(1)">1</button>
             <button id="btn-num-2" onclick="handleNumberInput(2)">2</button>
@@ -58,9 +62,12 @@
         </div>
     </div>
 
+    <!-- ヒント解説表示用メッセージボックス -->
+    <div id="hint-message-box" class="hint-box" style="display: none;"></div>
+
     <!-- 3. 下段：キャンバス領域 -->
     <div id="canvas-container"></div>
 
-    <script src="sketch.js?v=3.0"></script>
+    <script src="sketch.js?v=4.0"></script>
 </body>
 </html>

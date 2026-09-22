@@ -13,6 +13,14 @@ let selectedRow = -1;
 let selectedCol = -1;
 let memoMode = false;
 
+// --- カスタム入力（編集）モード ---
+let isEditMode = false;
+let editMessage = "";
+
+// --- ヒント解説表示用 ---
+let hintHighlight = null; // { row, col, type, areaType, areaIndex, num }
+let hintMessage = "";
+
 let gameStartTime = 0;
 let clearTime = null;
 let hintCount = 0;
@@ -73,6 +81,9 @@ function windowResized() {
 
 function newGame() {
     stopReplay();
+    clearHintState();
+    isEditMode = false;
+    editMessage = "";
 
     initializeBoard();
     solve();
@@ -106,6 +117,7 @@ function newGame() {
         });
     }
 
+    updateEditButtonUI();
     updateMemoButtonUI();
     updateDifficultyUI();
     updateRecordButtonUI();
@@ -113,9 +125,34 @@ function newGame() {
     updateNumberButtonsUI();
 }
 
+function clearHintState() {
+    hintHighlight = null;
+    hintMessage = "";
+    let el = document.getElementById("hint-message-box");
+    if (el) {
+        el.style.display = "none";
+        el.textContent = "";
+    }
+}
+
+function setHintMessage(msg) {
+    hintMessage = msg;
+    let el = document.getElementById("hint-message-box");
+    if (el) {
+        if (msg) {
+            el.style.display = "block";
+            el.textContent = msg;
+        } else {
+            el.style.display = "none";
+            el.textContent = "";
+        }
+    }
+}
+
 // --- リプレイ制御関数群 ---
 
 function toggleReplay() {
+    if (isEditMode) return;
     if (!actionLogs || actionLogs.length <= 1) {
         alert("再生できる記録がありません。「記録: OFF」ボタンを押して「記録: ON」にしてからプレイを開始してください。");
         return;
@@ -297,7 +334,7 @@ function updateReplayUI() {
 }
 
 function logAction(actionType, detail = {}) {
-    if (!isRecording || gameOver || clearTime !== null || isReplaying) return;
+    if (!isRecording || gameOver || clearTime !== null || isReplaying || isEditMode) return;
     
     if (replayIndex < actionLogs.length - 1) {
         actionLogs = actionLogs.slice(0, replayIndex + 1);
@@ -317,12 +354,17 @@ function logAction(actionType, detail = {}) {
 function draw() {
     drawBoardBackground();
 
-    checkGameClear();
+    if (!isEditMode) {
+        checkGameClear();
+    }
+
     drawHighlight();
     drawGrid();
     drawNumbers();
 
-    if (gameOver) {
+    if (isEditMode) {
+        // 問題入力モード用のヘッダー表示
+    } else if (gameOver) {
         drawGameOverMessage();
     } else if (clearTime !== null) {
         drawGameClearMessage();
@@ -352,36 +394,65 @@ function drawGrid() {
     }
 }
 
-// ★ 同じ数字のハイライト処理を追加・拡張した drawHighlight 関数
 function drawHighlight() {
+    noStroke();
+
+    // --- A. ヒントのロジック・エリアハイライト表示 ---
+    if (hintHighlight && !isEditMode) {
+        if (hintHighlight.type === "naked") {
+            // 裸の単一: マス自体をピンクで目立たせる
+            fill(255, 182, 193, 180);
+            rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        } else if (hintHighlight.type === "hidden") {
+            // 隠れた単一: 関連エリア（行/列/ブロック）を薄い緑で、対象マスを濃い緑で
+            fill(200, 247, 197, 130);
+            if (hintHighlight.areaType === "row") {
+                rect(0, HEADER_HEIGHT + hintHighlight.areaIndex * CELL_SIZE, width, CELL_SIZE);
+            } else if (hintHighlight.areaType === "col") {
+                rect(hintHighlight.areaIndex * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
+            } else if (hintHighlight.areaType === "block") {
+                let br = floor(hintHighlight.areaIndex / 3) * 3;
+                let bc = (hintHighlight.areaIndex % 3) * 3;
+                rect(bc * CELL_SIZE, HEADER_HEIGHT + br * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
+            }
+            // 注目マス
+            fill(120, 220, 120, 200);
+            rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        } else if (hintHighlight.type === "direct") {
+            // 直近の正解指示
+            fill(173, 216, 230, 180);
+            rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+    }
+
     if (selectedRow === -1 || selectedCol === -1) return;
 
-    noStroke();
-    
-    // 1. 選択中のマスの行・列・3x3領域の薄いハイライト
-    fill(235, 243, 253);
-    rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
-    rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
+    // --- B. 通常の選択マスハイライト ---
+    // 編集モード時またはヒントハイライトがない場合
+    if (isEditMode || !hintHighlight) {
+        fill(235, 243, 253);
+        rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
+        rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
 
-    let startRow = floor(selectedRow / 3) * 3;
-    let startCol = floor(selectedCol / 3) * 3;
-    rect(startCol * CELL_SIZE, HEADER_HEIGHT + startRow * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
+        let startRow = floor(selectedRow / 3) * 3;
+        let startCol = floor(selectedCol / 3) * 3;
+        rect(startCol * CELL_SIZE, HEADER_HEIGHT + startRow * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
 
-    // 2. 選択中のマスに入っている数字と同じ数字を盤面全体でハイライト
-    let targetNum = board[selectedRow][selectedCol];
-    if (targetNum !== 0) {
-        fill(254, 240, 138, 200); // 柔らかな黄色
-        for (let r = 0; r < 9; r++) {
-            for (let c = 0; c < 9; c++) {
-                if (board[r][c] === targetNum) {
-                    rect(c * CELL_SIZE, HEADER_HEIGHT + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        let targetNum = board[selectedRow][selectedCol];
+        if (targetNum !== 0) {
+            fill(254, 240, 138, 200);
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] === targetNum) {
+                        rect(c * CELL_SIZE, HEADER_HEIGHT + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
                 }
             }
         }
     }
 
-    // 3. 選択中のマス自体の背景ハイライト
-    fill(160, 201, 255);
+    // 選択中のマス自体
+    fill(160, 201, 255, 180);
     rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
@@ -395,14 +466,20 @@ function drawNumbers() {
         for (let c = 0; c < 9; c++) {
             let val = board[r][c];
             if (val === 0) {
-                drawMemo(r, c);
+                if (!isEditMode) drawMemo(r, c);
                 continue; 
             }
 
             let x = c * CELL_SIZE + CELL_SIZE / 2;
             let y = HEADER_HEIGHT + r * CELL_SIZE + CELL_SIZE / 2;
 
-            if (fixed[r][c]) {
+            if (isEditMode) {
+                // 編集モード中はすべて濃い色で表示
+                fill(44, 62, 80);
+                textSize(CELL_SIZE * 0.58);
+                textStyle(BOLD);
+                text(val, x, y);
+            } else if (fixed[r][c]) {
                 fill(30, 39, 46);
                 textSize(CELL_SIZE * 0.58);
                 textStyle(NORMAL);
@@ -465,18 +542,27 @@ function drawStatus() {
     line(0, HEADER_HEIGHT, width, HEADER_HEIGHT);
 
     textFont(MAIN_FONT);
-    textSize(11);
-    textStyle(BOLD);
-    fill(108, 122, 137);
 
-    let currentBest = getBestTime();
-    let bestStr = currentBest ? formatTime(currentBest) : "--:--";
+    if (isEditMode) {
+        textAlign(CENTER, CENTER);
+        textSize(13);
+        textStyle(BOLD);
+        fill(230, 126, 34);
+        text("【問題入力モード】数字を配置してください", width / 2, HEADER_HEIGHT / 2);
+    } else {
+        textSize(11);
+        textStyle(BOLD);
+        fill(108, 122, 137);
 
-    textAlign(LEFT, CENTER);
-    text(`MODE: ${DIFFICULTIES[difficulty].label}`, 10, HEADER_HEIGHT / 2);
+        let currentBest = getBestTime();
+        let bestStr = currentBest ? formatTime(currentBest) : "--:--";
 
-    textAlign(RIGHT, CENTER);
-    text(`ERR: ${mistakes}  |  BEST ${bestStr}  |  TIME ${formatTime(getElapsedSeconds())}`, width - 10, HEADER_HEIGHT / 2);
+        textAlign(LEFT, CENTER);
+        text(`MODE: ${DIFFICULTIES[difficulty] ? DIFFICULTIES[difficulty].label : "CUSTOM"}`, 10, HEADER_HEIGHT / 2);
+
+        textAlign(RIGHT, CENTER);
+        text(`ERR: ${mistakes}  |  BEST ${bestStr}  |  TIME ${formatTime(getElapsedSeconds())}`, width - 10, HEADER_HEIGHT / 2);
+    }
 }
 
 function drawGameClearMessage() {
@@ -545,7 +631,7 @@ function saveState() {
 }
 
 function undo() {
-    if (historyStack.length === 0 || gameOver || clearTime !== null) return;
+    if (historyStack.length === 0 || gameOver || clearTime !== null || isEditMode) return;
 
     let previous = historyStack.pop();
     board = previous.board;
@@ -554,8 +640,17 @@ function undo() {
 }
 
 function setNumber(number) {
-    if (gameOver || clearTime !== null || selectedRow === -1 || selectedCol === -1) return;   
-    if (fixed[selectedRow][selectedCol]) return;
+    if (selectedRow === -1 || selectedCol === -1) return;   
+
+    clearHintState();
+
+    if (isEditMode) {
+        // 問題入力モード時: 自由に数字を上書き・配置
+        board[selectedRow][selectedCol] = number;
+        return;
+    }
+
+    if (gameOver || clearTime !== null || fixed[selectedRow][selectedCol]) return;
 
     if (isReplaying) {
         stopReplay();
@@ -580,7 +675,9 @@ function setNumber(number) {
 }
 
 function toggleMemo(number) {
-    if (selectedRow === -1 || selectedCol === -1 || fixed[selectedRow][selectedCol]) return;
+    if (isEditMode || selectedRow === -1 || selectedCol === -1 || fixed[selectedRow][selectedCol]) return;
+
+    clearHintState();
 
     if (isReplaying) {
         stopReplay();
@@ -601,7 +698,7 @@ function toggleMemo(number) {
 
 function handleNumberInput(num) {
     let numericValue = Number(num);
-    if (memoMode) {
+    if (memoMode && !isEditMode) {
         toggleMemo(numericValue);
     } else {
         setNumber(numericValue);
@@ -611,6 +708,7 @@ function handleNumberInput(num) {
 function handleErase() { setNumber(0); }
 
 function handleMemoToggle() {
+    if (isEditMode) return;
     memoMode = !memoMode;
     updateMemoButtonUI();
 }
@@ -628,13 +726,11 @@ function updateMemoButtonUI() {
     }
 }
 
-// ★ 入力完了済みの数字ボタンをグレーアウトするUI更新関数
 function updateNumberButtonsUI() {
     let counts = Array(10).fill(0);
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             let val = board[r][c];
-            // エラーでない正しい数字（または初期数字）をカウント
             if (val >= 1 && val <= 9 && !isError(r, c)) {
                 counts[val]++;
             }
@@ -644,13 +740,235 @@ function updateNumberButtonsUI() {
     for (let i = 1; i <= 9; i++) {
         let btn = document.getElementById(`btn-num-${i}`);
         if (btn) {
-            if (counts[i] >= 9) {
+            if (counts[i] >= 9 && !isEditMode) {
                 btn.classList.add("completed");
             } else {
                 btn.classList.remove("completed");
             }
         }
     }
+}
+
+// --- 問題入力（カスタム編集）モード関連 ---
+
+function toggleEditMode() {
+    if (!isEditMode) {
+        // 編集モード開始
+        stopReplay();
+        clearHintState();
+        isEditMode = true;
+        initializeBoard();
+        initializeFixed();
+        initializeMemo();
+        selectedRow = -1;
+        selectedCol = -1;
+    } else {
+        // 編集完了の試み（検証）
+        finishEditMode();
+    }
+    updateEditButtonUI();
+}
+
+function cancelEditMode() {
+    isEditMode = false;
+    newGame();
+}
+
+function finishEditMode() {
+    // 1. 重複チェック（初期配置で数独のルール違反がないか）
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            let num = board[r][c];
+            if (num !== 0) {
+                board[r][c] = 0;
+                if (!isValidMove(r, c, num)) {
+                    board[r][c] = num;
+                    alert("初期盤面に重複（同じ行・列・ブロックに同じ数字）があるため、解けません。修正してください。");
+                    return;
+                }
+                board[r][c] = num;
+            }
+        }
+    }
+
+    // 2. 解の数をカウント（唯一解か確認）
+    solutionCount = 0;
+    countSolutions();
+
+    if (solutionCount === 0) {
+        alert("この問題には解が存在しません。入力を見直してください。");
+        return;
+    } else if (solutionCount > 1) {
+        alert("この問題には複数の解（答え）が存在します。数字を追加するか問題を確認してください。");
+        return;
+    }
+
+    // 唯一解が存在する ➔ 正式にカスタム問題としてスタート
+    answerBoard = copyBoard(board);
+    solve(); // answerBoardに解答を格納
+    let tempAns = copyBoard(board);
+
+    // バックアップした初期問題の復元
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (tempAns[r][c] !== 0) {
+                board[r][c] = answerBoard[r][c]; 
+            }
+        }
+    }
+    
+    // 正解盤面の決定
+    answerBoard = tempAns;
+
+    // 初期数字を固定
+    initializeFixed();
+    initializeMemo();
+
+    isEditMode = false;
+    gameStartTime = millis();
+    clearTime = null;
+    mistakes = 0;
+    gameOver = false;
+    hintCount = 0;
+    historyStack = [];
+    actionLogs = [];
+
+    updateEditButtonUI();
+    updateNumberButtonsUI();
+}
+
+function updateEditButtonUI() {
+    let btnEdit = document.getElementById("btn-edit");
+    let cancelContainer = document.getElementById("edit-cancel-container");
+
+    if (btnEdit) {
+        if (isEditMode) {
+            btnEdit.textContent = "編集完了（解く）";
+            btnEdit.classList.add("active-rec");
+            if (cancelContainer) cancelContainer.style.display = "inline-block";
+        } else {
+            btnEdit.textContent = "問題入力";
+            btnEdit.classList.remove("active-rec");
+            if (cancelContainer) cancelContainer.style.display = "none";
+        }
+    }
+}
+
+// --- ロジック解説付きヒント機能 ---
+
+function giveHint() {
+    if (gameOver || clearTime !== null || isEditMode) return;
+
+    clearHintState();
+
+    // 1. 【裸の単一 (Naked Single)】を探す
+    // マスの周囲に8種類の数字が存在し、入れる数字が1つに確定しているマス
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (board[r][c] === 0) {
+                let candidates = getCandidates(r, c);
+                if (candidates.length === 1) {
+                    let val = candidates[0];
+                    hintHighlight = { row: r, col: c, type: "naked", num: val };
+                    selectedRow = r;
+                    selectedCol = c;
+                    setHintMessage(`【ヒント: 裸の単一】\n行・列・ブロックの数字から、このマスには「${val}」しか入りません。`);
+                    return;
+                }
+            }
+        }
+    }
+
+    // 2. 【隠れた単一 (Hidden Single)】を探す
+    // 行・列・ブロックの中で、特定の数字が入れる場所が1つしかないマス
+    for (let num = 1; num <= 9; num++) {
+        // 行ごとのチェック
+        for (let r = 0; r < 9; r++) {
+            let possibleCols = [];
+            for (let c = 0; c < 9; c++) {
+                if (board[r][c] === 0 && isValidMove(r, c, num)) {
+                    possibleCols.push(c);
+                }
+            }
+            if (possibleCols.length === 1) {
+                let c = possibleCols[0];
+                hintHighlight = { row: r, col: c, type: "hidden", areaType: "row", areaIndex: r, num: num };
+                selectedRow = r;
+                selectedCol = c;
+                setHintMessage(`【ヒント: 隠れた単一】\n第${r + 1}行の中で数字「${num}」が入れるのはこのマスだけです。`);
+                return;
+            }
+        }
+
+        // 列ごとのチェック
+        for (let c = 0; c < 9; c++) {
+            let possibleRows = [];
+            for (let r = 0; r < 9; r++) {
+                if (board[r][c] === 0 && isValidMove(r, c, num)) {
+                    possibleRows.push(r);
+                }
+            }
+            if (possibleRows.length === 1) {
+                let r = possibleRows[0];
+                hintHighlight = { row: r, col: c, type: "hidden", areaType: "col", areaIndex: c, num: num };
+                selectedRow = r;
+                selectedCol = c;
+                setHintMessage(`【ヒント: 隠れた単一】\n第${c + 1}列の中で数字「${num}」が入れるのはこのマスだけです。`);
+                return;
+            }
+        }
+
+        // 3x3ブロックごとのチェック
+        for (let b = 0; b < 9; b++) {
+            let startRow = floor(b / 3) * 3;
+            let startCol = (b % 3) * 3;
+            let possibleCells = [];
+            for (let r = startRow; r < startRow + 3; r++) {
+                for (let c = startCol; c < startCol + 3; c++) {
+                    if (board[r][c] === 0 && isValidMove(r, c, num)) {
+                        possibleCells.push({ r, c });
+                    }
+                }
+            }
+            if (possibleCells.length === 1) {
+                let { r, c } = possibleCells[0];
+                hintHighlight = { row: r, col: c, type: "hidden", areaType: "block", areaIndex: b, num: num };
+                selectedRow = r;
+                selectedCol = c;
+                setHintMessage(`【ヒント: 隠れた単一】\nこの3x3エリアの中で数字「${num}」が入れるのはこのマスだけです。`);
+                return;
+            }
+        }
+    }
+
+    // 3. 上記の基本テクニックで見つからない場合（またはミスしているマスがある場合）：直接正解の1マスを教える
+    let emptyCells = [];
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (!fixed[r][c] && (board[r][c] === 0 || isError(r, c))) {
+                emptyCells.push({ row: r, col: c });
+            }
+        }
+    }
+    if (emptyCells.length === 0) return;
+
+    let cell = random(emptyCells);
+    let val = answerBoard[cell.row][cell.col];
+
+    hintHighlight = { row: cell.row, col: cell.col, type: "direct", num: val };
+    selectedRow = cell.row;
+    selectedCol = cell.col;
+    setHintMessage(`【ヒント】\nこのマスの正解は「${val}」です。`);
+}
+
+function getCandidates(row, col) {
+    let list = [];
+    for (let n = 1; n <= 9; n++) {
+        if (isValidMove(row, col, n)) {
+            list.push(n);
+        }
+    }
+    return list;
 }
 
 function mousePressed() {
@@ -662,6 +980,7 @@ function mousePressed() {
     if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
         selectedRow = r;
         selectedCol = c;
+        clearHintState();
     }
 }
 
@@ -720,34 +1039,8 @@ function checkGameClear() {
     }
 }
 
-function giveHint() {
-    if (gameOver || clearTime !== null) return;
-    let emptyCells = [];
-    for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-            if (!fixed[r][c] && (board[r][c] === 0 || isError(r, c))) {
-                emptyCells.push({ row: r, col: c });
-            }
-        }
-    }
-    if (emptyCells.length === 0) return;
-
-    saveState();
-    let cell = random(emptyCells);
-    let val = answerBoard[cell.row][cell.col];
-
-    logAction("hint", { row: cell.row, col: cell.col, val: val });
-
-    board[cell.row][cell.col] = val;
-    fixed[cell.row][cell.col] = true;
-    memo[cell.row][cell.col] = [];
-    removeRelatedMemos(cell.row, cell.col, val);
-    hintCount++;
-
-    updateNumberButtonsUI();
-}
-
 function handleRecordToggle() {
+    if (isEditMode) return;
     recordMode = !recordMode;
     isRecording = recordMode;
 

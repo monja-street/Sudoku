@@ -58,7 +58,8 @@ button:active {
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35) !important;
 }
 
-#btn-record.active-rec {
+#btn-record.active-rec,
+#btn-edit.active-rec {
     background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
     color: #ffffff !important;
     border-color: #c0392b !important;
@@ -147,7 +148,6 @@ button:active {
     width: 100%;
 }
 
-/* 完成した数字ボタンのグレーアウト用スタイル */
 .number-row button.completed {
     background: rgba(200, 207, 216, 0.5) !important;
     color: #a0aec0 !important;
@@ -157,7 +157,25 @@ button:active {
 }
 
 /* ==========================================
-   6. 下段：キャンバス（数独盤面）
+   6. ヒント解説表示用メッセージボックス
+   ========================================== */
+.hint-box {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 8px auto;
+    padding: 8px 12px;
+    background: #ffffff;
+    border-left: 4px solid #3498db;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #2c3e50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    white-space: pre-line;
+}
+
+/* ==========================================
+   7. 下段：キャンバス（数独盤面）
    ========================================== */
 #canvas-container {
     width: 100%;
