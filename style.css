@@ -147,6 +147,15 @@ button:active {
     width: 100%;
 }
 
+/* 完成した数字ボタンのグレーアウト用スタイル */
+.number-row button.completed {
+    background: rgba(200, 207, 216, 0.5) !important;
+    color: #a0aec0 !important;
+    border-color: #cbd5e0 !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+}
+
 /* ==========================================
    6. 下段：キャンバス（数独盤面）
    ========================================== */

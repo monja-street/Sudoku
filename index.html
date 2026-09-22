@@ -15,7 +15,7 @@
 </head>
 <body>
 
-    <!-- 1. 最上段：難易度 ＆ 記録・再生コントロール（2行に分割） -->
+    <!-- 1. 最上段：難易度 ＆ 記録・再生コントロール -->
     <div class="button-container">
         <!-- 難易度選択行 -->
         <div class="mode-row">
@@ -44,17 +44,17 @@
             <button onclick="newGame()">New Game</button>
         </div>
 
-        <!-- 数字ボタン行（1〜9） -->
+        <!-- 数字ボタン行（1〜9）：id を追加 -->
         <div class="number-row">
-            <button onclick="handleNumberInput(1)">1</button>
-            <button onclick="handleNumberInput(2)">2</button>
-            <button onclick="handleNumberInput(3)">3</button>
-            <button onclick="handleNumberInput(4)">4</button>
-            <button onclick="handleNumberInput(5)">5</button>
-            <button onclick="handleNumberInput(6)">6</button>
-            <button onclick="handleNumberInput(7)">7</button>
-            <button onclick="handleNumberInput(8)">8</button>
-            <button onclick="handleNumberInput(9)">9</button>
+            <button id="btn-num-1" onclick="handleNumberInput(1)">1</button>
+            <button id="btn-num-2" onclick="handleNumberInput(2)">2</button>
+            <button id="btn-num-3" onclick="handleNumberInput(3)">3</button>
+            <button id="btn-num-4" onclick="handleNumberInput(4)">4</button>
+            <button id="btn-num-5" onclick="handleNumberInput(5)">5</button>
+            <button id="btn-num-6" onclick="handleNumberInput(6)">6</button>
+            <button id="btn-num-7" onclick="handleNumberInput(7)">7</button>
+            <button id="btn-num-8" onclick="handleNumberInput(8)">8</button>
+            <button id="btn-num-9" onclick="handleNumberInput(9)">9</button>
         </div>
     </div>
 

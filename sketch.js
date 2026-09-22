@@ -1,3 +1,5 @@
+// sketch.js
+
 let CELL_SIZE = 50;
 const GRID_SIZE = 9;
 const HEADER_HEIGHT = 45;
@@ -17,7 +19,7 @@ let hintCount = 0;
 
 const MAX_MISTAKES = 3;
 let mistakes = 0;
-let gameOver = false; // ★ 宣言を有効化
+let gameOver = false;
 let isNewBestTime = false;
 
 let solutionCount = 0;
@@ -91,17 +93,15 @@ function newGame() {
     gameStartTime = millis();
     clearTime = null;
 
-    // 記録状態の自動セットと初期ログ作成
-    isRecording = recordMode; // 記録コードが ON なら自動的に記録スタート
-    actionLogs = []; // 古いログをリセット
+    isRecording = recordMode;
+    actionLogs = [];
 
     if (isRecording) {
-        // ニューゲームを押さなくても、初回起動時からこの初期盤面データが記録される
         actionLogs.push({
             time: 0,
             type: "init",
             board: copyBoard(board),
-            solution: copyBoard(answerBoard), // 正解データを保持！
+            solution: copyBoard(answerBoard),
             fixed: copyBoard(fixed)
         });
     }
@@ -110,6 +110,7 @@ function newGame() {
     updateDifficultyUI();
     updateRecordButtonUI();
     updateReplayUI();
+    updateNumberButtonsUI();
 }
 
 // --- リプレイ制御関数群 ---
@@ -135,10 +136,8 @@ function startReplay() {
     isPaused = false;
     replayIndex = 0;
 
-    // クリア表示を一時的に解除して再生アニメーションを見せる
     clearTime = null;
 
-    // 盤面を初期状態にリセット
     applyStateAtStep(0);
 
     replayTimer = setInterval(() => {
@@ -165,9 +164,8 @@ function resumeReplay() {
 
 function stopReplay() {
     stopReplayTimer();
-    isReplaying = false; // ★　リプレイ状態を解除
+    isReplaying = false;
     isPaused = false;
-    // replayIndex のリセットは行わず、そのままプレイを続行できるようにする。
     updateReplayUI();
 }
 
@@ -184,13 +182,12 @@ function stepForward() {
         isReplaying = true;
         isPaused = true;
         replayIndex = 0;
-        clearTime = null; // クリア表示を解除
+        clearTime = null;
         applyStateAtStep(0);
         updateReplayUI();
         return; 
     }
 
-    // ボタン操作時もクリア画面を一時解除
     clearTime = null;
 
     if (replayIndex < actionLogs.length - 1) {
@@ -198,10 +195,8 @@ function stepForward() {
         let log = actionLogs[replayIndex];
         applyLogStep(log);
     } else {
-        // 最後のステップまで再生完了したら一時停止
         pauseReplay();
 
-        // もし最後のマスまで正しく埋まっていればクリアメッセージを再表示
         if (isGameClear()) {
             clearTime = millis();
         }
@@ -210,17 +205,15 @@ function stepForward() {
 }
 
 function stepBackward() {
-    // クリア後に押された場合、リプレイモードを立ち上げて１つ前の状態に戻す
     if (!isReplaying) {
         if (!actionLogs || actionLogs.length <= 1) return;
         isReplaying = true;
         isPaused = true;
-        replayIndex = actionLogs.length - 1; // 最終手からスタート
+        replayIndex = actionLogs.length - 1;
     }
 
     if (replayIndex <= 0) return;
 
-    // クリア画面を解除して盤面を見せる
     clearTime = null;
     
     replayIndex--;
@@ -244,6 +237,7 @@ function applyStateAtStep(targetIndex) {
     for (let i = 1; i <= targetIndex; i++) {
         applyLogStep(actionLogs[i]);
     }
+    updateNumberButtonsUI();
 }
 
 function applyLogStep(log) {
@@ -273,9 +267,9 @@ function applyLogStep(log) {
         if (memo && memo[log.row]) memo[log.row][log.col] = [];
         removeRelatedMemos(log.row, log.col, log.val);
     }
+    updateNumberButtonsUI();
 }
 
-// ★ 4. HTML要素IDの不一致を修正 (`replay-status`)
 function updateReplayUI() {
     let btnPlay = document.getElementById("btn-replay-play");
     let btnStatus = document.getElementById("replay-status");
@@ -303,15 +297,11 @@ function updateReplayUI() {
 }
 
 function logAction(actionType, detail = {}) {
-    // クリア後やゲームオーバー後、またはリプレイ中は新しい操作を記録しない
     if (!isRecording || gameOver || clearTime !== null || isReplaying) return;
     
-    // もしリプレイ等で過去のステップに戻った状態から新しい操作をした場合、
-    // 現在のステップより先のログを削除して新しい分岐として記録する
-    if (replayIndex < actionLogs.length -1) {
+    if (replayIndex < actionLogs.length - 1) {
         actionLogs = actionLogs.slice(0, replayIndex + 1);
     }
-    
     
     let elapsedTime = millis() - gameStartTime;
     actionLogs.push({
@@ -320,7 +310,6 @@ function logAction(actionType, detail = {}) {
         ...detail
     });
 
-    // 最新のステップ位置に更新
     replayIndex = actionLogs.length - 1;
     updateReplayUI();
 }
@@ -363,10 +352,13 @@ function drawGrid() {
     }
 }
 
+// ★ 同じ数字のハイライト処理を追加・拡張した drawHighlight 関数
 function drawHighlight() {
     if (selectedRow === -1 || selectedCol === -1) return;
 
     noStroke();
+    
+    // 1. 選択中のマスの行・列・3x3領域の薄いハイライト
     fill(235, 243, 253);
     rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
     rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
@@ -375,16 +367,28 @@ function drawHighlight() {
     let startCol = floor(selectedCol / 3) * 3;
     rect(startCol * CELL_SIZE, HEADER_HEIGHT + startRow * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
 
+    // 2. 選択中のマスに入っている数字と同じ数字を盤面全体でハイライト
+    let targetNum = board[selectedRow][selectedCol];
+    if (targetNum !== 0) {
+        fill(254, 240, 138, 200); // 柔らかな黄色
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (board[r][c] === targetNum) {
+                    rect(c * CELL_SIZE, HEADER_HEIGHT + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+    }
+
+    // 3. 選択中のマス自体の背景ハイライト
     fill(160, 201, 255);
     rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
-// ★ 3. 描画関数の変数名・座標計算を完全修正
-
 function drawNumbers() {
     push();
     textFont(MAIN_FONT);
-    textStyle(NORMAL); // ★ 最初に全体を「NORMAL(太くない方)」に強制固定
+    textStyle(NORMAL);
     textAlign(CENTER, CENTER);
 
     for (let r = 0; r < 9; r++) {
@@ -399,29 +403,26 @@ function drawNumbers() {
             let y = HEADER_HEIGHT + r * CELL_SIZE + CELL_SIZE / 2;
 
             if (fixed[r][c]) {
-                // 初期数字（黒色）
                 fill(30, 39, 46);
                 textSize(CELL_SIZE * 0.58);
-                textStyle(NORMAL); // ★ 太字を解除
+                textStyle(NORMAL);
                 text(val, x, y);
             } else {
                 let isCorrect = (answerBoard && val === answerBoard[r][c]);
 
                 if (isCorrect) {
-                    // 正解入力（青色）
                     fill(41, 128, 185);
                     textSize(CELL_SIZE * 0.58);
-                    textStyle(NORMAL); // ★ 太字を解除
+                    textStyle(NORMAL);
                     text(val, x, y);
                 } else {
-                    // 誤入力（赤色）
                     fill(231, 76, 60, 40);
                     noStroke();
                     ellipse(x, y, CELL_SIZE * 0.75);
 
                     fill(231, 76, 60);
                     textSize(CELL_SIZE * 0.58);
-                    textStyle(NORMAL); // ★ エラー時も太くないフォントに揃える
+                    textStyle(NORMAL);
                     text(val, x, y);
                 }
             }
@@ -486,25 +487,21 @@ function drawGameClearMessage() {
     textFont(MAIN_FONT);
     textAlign(CENTER, CENTER);
    
-    // タイトル
     textSize(32);
     textStyle(BOLD);
     fill(39, 174, 96);
     text("VICTORY!", width / 2, height / 2 - 55);
 
-    // クリアタイム表示
     textSize(18);
     fill(52, 73, 94);
     textStyle(NORMAL);
     text(`CLEAR TIME : ${formatTime(getElapsedSeconds())}`, width / 2, height / 2 + 10);
 
-    // エラー回数（ERR）の追加表示
     textSize(15);
-    fill(231, 76, 60); // 赤色アクセント
+    fill(231, 76, 60);
     textStyle(BOLD);
     text(`MISTAKES : ${mistakes}`, width / 2, height / 2 + 65);
 
-    // ベスト記録 / ヒント使用時のメッセージ
     textSize(13);
     if (hintCount > 0) {
         fill(127, 140, 141);
@@ -553,13 +550,13 @@ function undo() {
     let previous = historyStack.pop();
     board = previous.board;
     memo = previous.memo;
+    updateNumberButtonsUI();
 }
 
 function setNumber(number) {
     if (gameOver || clearTime !== null || selectedRow === -1 || selectedCol === -1) return;   
     if (fixed[selectedRow][selectedCol]) return;
 
-    // ★ ユーザーが操作したらリプレイモードを解除して記録を再開可能にする
     if (isReplaying) {
         stopReplay();
     }
@@ -578,12 +575,13 @@ function setNumber(number) {
             mistakes++;
         }
     }
+
+    updateNumberButtonsUI();
 }
 
 function toggleMemo(number) {
     if (selectedRow === -1 || selectedCol === -1 || fixed[selectedRow][selectedCol]) return;
 
-    // ユーザが操作したらリプレイモードを解除する
     if (isReplaying) {
         stopReplay();
     }
@@ -627,6 +625,31 @@ function updateMemoButtonUI() {
     } else {
         btn.textContent = "メモ: OFF";
         btn.classList.remove("active");
+    }
+}
+
+// ★ 入力完了済みの数字ボタンをグレーアウトするUI更新関数
+function updateNumberButtonsUI() {
+    let counts = Array(10).fill(0);
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            let val = board[r][c];
+            // エラーでない正しい数字（または初期数字）をカウント
+            if (val >= 1 && val <= 9 && !isError(r, c)) {
+                counts[val]++;
+            }
+        }
+    }
+
+    for (let i = 1; i <= 9; i++) {
+        let btn = document.getElementById(`btn-num-${i}`);
+        if (btn) {
+            if (counts[i] >= 9) {
+                btn.classList.add("completed");
+            } else {
+                btn.classList.remove("completed");
+            }
+        }
     }
 }
 
@@ -691,7 +714,6 @@ function isGameClear() {
 }
 
 function checkGameClear() {
-    // リプレイ操作中（isReplaying === true）は自動でクリア判定（オーバーレイ表示）を行わない。
     if (!gameOver && clearTime === null && !isReplaying && isGameClear()) {
         clearTime = millis();
         isNewBestTime = saveBestTime();
@@ -721,13 +743,14 @@ function giveHint() {
     memo[cell.row][cell.col] = [];
     removeRelatedMemos(cell.row, cell.col, val);
     hintCount++;
+
+    updateNumberButtonsUI();
 }
 
 function handleRecordToggle() {
     recordMode = !recordMode;
-    isRecording = recordMode
+    isRecording = recordMode;
 
-    // 途中で ON に切り替えた場合で、まだログが無い場合は「現在の盤面」を初期ログとして保存
     if (isRecording && actionLogs.length === 0) {
         actionLogs = [{
             time: 0,
