@@ -428,8 +428,8 @@ function drawHighlight() {
     if (selectedRow === -1 || selectedCol === -1) return;
 
     // --- B. 通常の選択マスハイライト ---
-    // 編集モード時またはヒントハイライトがない場合
     if (isEditMode || !hintHighlight) {
+        // 1. 選択中の行・列・3x3ブロックの背景強調（薄い青）
         fill(235, 243, 253);
         rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
         rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
@@ -439,8 +439,10 @@ function drawHighlight() {
         rect(startCol * CELL_SIZE, HEADER_HEIGHT + startRow * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
 
         let targetNum = board[selectedRow][selectedCol];
+
         if (targetNum !== 0) {
-            fill(254, 240, 138, 200);
+            // 2. 選択したマスに数字がある場合：同じ数字のマスすべてを同じ黄色で塗る
+            fill(254, 240, 138, 220); // 黄色ハイライト
             for (let r = 0; r < 9; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r][c] === targetNum) {
@@ -448,12 +450,25 @@ function drawHighlight() {
                     }
                 }
             }
+
+            // 3. 選択しているマス自体の周囲に赤い枠線をつける
+            stroke(231, 76, 60);       // 赤色
+            strokeWeight(3);           // 枠線の太さ
+            noFill();
+            // 内側に綺麗に枠を描くためわずかにオフセットを計算
+            rect(
+                selectedCol * CELL_SIZE + 1.5,
+                HEADER_HEIGHT + selectedRow * CELL_SIZE + 1.5,
+                CELL_SIZE - 3,
+                CELL_SIZE - 3
+            );
+            noStroke(); // 設定をリセット
+        } else {
+            // 4. 選択したマスが空（数字なし）の場合：従来の青い選択マスを表示
+            fill(160, 201, 255, 180);
+            rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
     }
-
-    // 選択中のマス自体
-    fill(160, 201, 255, 180);
-    rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
 function drawNumbers() {
