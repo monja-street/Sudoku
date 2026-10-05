@@ -22,6 +22,7 @@ let hintHighlight = null; // { row, col, type, areaType, areaIndex, num }
 let hintMessage = "";
 
 let gameStartTime = 0;
+let accumulatedTime = 0; // 中断前までの累積経過時間（秒）
 let clearTime = null;
 let hintCount = 0;
 
@@ -34,7 +35,7 @@ let solutionCount = 0;
 let historyStack = [];
 
 const DIFFICULTIES = {
-    easy:   { label: "EASY", removeCount: 38 },
+    easy:    { label: "EASY", removeCount: 38 },
     normal: { label: "NORMAL", removeCount: 48 },
     hard:   { label: "HARD", removeCount: 54 }
 };
@@ -52,6 +53,7 @@ let replayTimer = null;
 const REPLAY_SPEED = 400; 
 
 const MAIN_FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const SAVE_KEY = "sudoku_saved_game_state";
 
 function setup() {
     let targetWidth = min(windowWidth - 20, 500); 
@@ -67,7 +69,11 @@ function setup() {
     );
     
     canvas.parent("canvas-container");
-    newGame();
+
+    // 保存されているゲームがあれば復元、なければ新規ゲーム
+    if (!loadGameState()) {
+        newGame();
+    }
 }
 
 function windowResized() {
@@ -79,7 +85,78 @@ function windowResized() {
     resizeCanvas(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE + HEADER_HEIGHT);
 }
 
+// --- セーブ & ロード機能 ---
+
+function saveGameState() {
+    // 編集モード中、ゲームオーバー、クリア済み、またはリプレイ中は途中状態を保存しない
+    if (isEditMode || gameOver || clearTime !== null || isReplaying) return;
+
+    let currentElapsed = getElapsedSeconds();
+
+    let state = {
+        board: board,
+        answerBoard: answerBoard,
+        fixed: fixed,
+        memo: memo,
+        difficulty: difficulty,
+        accumulatedTime: currentElapsed,
+        mistakes: mistakes,
+        hintCount: hintCount,
+        actionLogs: actionLogs,
+        recordMode: recordMode,
+        historyStack: historyStack
+    };
+
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function loadGameState() {
+    let saved = localStorage.getItem(SAVE_KEY);
+    if (!saved) return false;
+
+    try {
+        let state = JSON.parse(saved);
+
+        board = state.board;
+        answerBoard = state.answerBoard;
+        fixed = state.fixed;
+        memo = state.memo;
+        difficulty = state.difficulty || "normal";
+        accumulatedTime = state.accumulatedTime || 0;
+        mistakes = state.mistakes || 0;
+        hintCount = state.hintCount || 0;
+        actionLogs = state.actionLogs || [];
+        recordMode = state.recordMode !== undefined ? state.recordMode : true;
+        historyStack = state.historyStack || [];
+
+        gameStartTime = millis();
+        clearTime = null;
+        gameOver = false;
+        isRecording = recordMode;
+        replayIndex = actionLogs.length > 0 ? actionLogs.length - 1 : 0;
+
+        updateEditButtonUI();
+        updateMemoButtonUI();
+        updateDifficultyUI();
+        updateRecordButtonUI();
+        updateReplayUI();
+        updateNumberButtonsUI();
+
+        return true;
+    } catch (e) {
+        console.error("保存データの読み込みに失敗しました", e);
+        clearSavedGameState();
+        return false;
+    }
+}
+
+function clearSavedGameState() {
+    localStorage.removeItem(SAVE_KEY);
+}
+
 function newGame() {
+    clearSavedGameState();
+
     stopReplay();
     clearHintState();
     isEditMode = false;
@@ -101,6 +178,7 @@ function newGame() {
     memoMode = false;
     historyStack = [];
 
+    accumulatedTime = 0;
     gameStartTime = millis();
     clearTime = null;
 
@@ -123,6 +201,8 @@ function newGame() {
     updateRecordButtonUI();
     updateReplayUI();
     updateNumberButtonsUI();
+
+    saveGameState();
 }
 
 function clearHintState() {
@@ -340,7 +420,7 @@ function logAction(actionType, detail = {}) {
         actionLogs = actionLogs.slice(0, replayIndex + 1);
     }
     
-    let elapsedTime = millis() - gameStartTime;
+    let elapsedTime = getElapsedSeconds();
     actionLogs.push({
         time: elapsedTime,
         type: actionType,
@@ -400,11 +480,9 @@ function drawHighlight() {
     // --- A. ヒントのロジック・エリアハイライト表示 ---
     if (hintHighlight && !isEditMode) {
         if (hintHighlight.type === "naked") {
-            // 裸の単一: マス自体をピンクで目立たせる
             fill(255, 182, 193, 180);
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         } else if (hintHighlight.type === "hidden") {
-            // 隠れた単一: 関連エリア（行/列/ブロック）を薄い緑で、対象マスを濃い緑で
             fill(200, 247, 197, 130);
             if (hintHighlight.areaType === "row") {
                 rect(0, HEADER_HEIGHT + hintHighlight.areaIndex * CELL_SIZE, width, CELL_SIZE);
@@ -415,11 +493,9 @@ function drawHighlight() {
                 let bc = (hintHighlight.areaIndex % 3) * 3;
                 rect(bc * CELL_SIZE, HEADER_HEIGHT + br * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
             }
-            // 注目マス
             fill(120, 220, 120, 200);
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         } else if (hintHighlight.type === "direct") {
-            // 直近の正解指示
             fill(173, 216, 230, 180);
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
@@ -429,7 +505,6 @@ function drawHighlight() {
 
     // --- B. 通常の選択マスハイライト ---
     if (isEditMode || !hintHighlight) {
-        // 1. 選択中の行・列・3x3ブロックの背景強調（薄い青）
         fill(235, 243, 253);
         rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
         rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
@@ -441,8 +516,7 @@ function drawHighlight() {
         let targetNum = board[selectedRow][selectedCol];
 
         if (targetNum !== 0) {
-            // 2. 選択したマスに数字がある場合：同じ数字のマスすべてを同じ黄色で塗る
-            fill(254, 240, 138, 220); // 黄色ハイライト
+            fill(254, 240, 138, 220); 
             for (let r = 0; r < 9; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r][c] === targetNum) {
@@ -451,20 +525,17 @@ function drawHighlight() {
                 }
             }
 
-            // 3. 選択しているマス自体の周囲に赤い枠線をつける
-            stroke(231, 76, 60);       // 赤色
-            strokeWeight(3);           // 枠線の太さ
+            stroke(231, 76, 60);       
+            strokeWeight(3);           
             noFill();
-            // 内側に綺麗に枠を描くためわずかにオフセットを計算
             rect(
                 selectedCol * CELL_SIZE + 1.5,
                 HEADER_HEIGHT + selectedRow * CELL_SIZE + 1.5,
                 CELL_SIZE - 3,
                 CELL_SIZE - 3
             );
-            noStroke(); // 設定をリセット
+            noStroke(); 
         } else {
-            // 4. 選択したマスが空（数字なし）の場合：従来の青い選択マスを表示
             fill(160, 201, 255, 180);
             rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
@@ -489,7 +560,6 @@ function drawNumbers() {
             let y = HEADER_HEIGHT + r * CELL_SIZE + CELL_SIZE / 2;
 
             if (isEditMode) {
-                // 編集モード中はすべて濃い色で表示
                 fill(44, 62, 80);
                 textSize(CELL_SIZE * 0.58);
                 textStyle(BOLD);
@@ -652,6 +722,7 @@ function undo() {
     board = previous.board;
     memo = previous.memo;
     updateNumberButtonsUI();
+    saveGameState();
 }
 
 function setNumber(number) {
@@ -660,7 +731,6 @@ function setNumber(number) {
     clearHintState();
 
     if (isEditMode) {
-        // 問題入力モード時: 自由に数字を上書き・配置
         board[selectedRow][selectedCol] = number;
         return;
     }
@@ -683,10 +753,15 @@ function setNumber(number) {
 
         if (isError(selectedRow, selectedCol)) {
             mistakes++;
+            if (mistakes >= MAX_MISTAKES) {
+                gameOver = true;
+                clearSavedGameState();
+            }
         }
     }
 
     updateNumberButtonsUI();
+    saveGameState();
 }
 
 function toggleMemo(number) {
@@ -709,6 +784,7 @@ function toggleMemo(number) {
     } else {
         currentMemo.splice(index, 1);
     }
+    saveGameState();
 }
 
 function handleNumberInput(num) {
@@ -768,7 +844,6 @@ function updateNumberButtonsUI() {
 
 function toggleEditMode() {
     if (!isEditMode) {
-        // 編集モード開始
         stopReplay();
         clearHintState();
         isEditMode = true;
@@ -778,7 +853,6 @@ function toggleEditMode() {
         selectedRow = -1;
         selectedCol = -1;
     } else {
-        // 編集完了の試み（検証）
         finishEditMode();
     }
     updateEditButtonUI();
@@ -790,7 +864,6 @@ function cancelEditMode() {
 }
 
 function finishEditMode() {
-    // 1. 重複チェック（初期配置で数独のルール違反がないか）
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             let num = board[r][c];
@@ -806,7 +879,6 @@ function finishEditMode() {
         }
     }
 
-    // 2. 解の数をカウント（唯一解か確認）
     solutionCount = 0;
     countSolutions();
 
@@ -818,12 +890,10 @@ function finishEditMode() {
         return;
     }
 
-    // 唯一解が存在する ➔ 正式にカスタム問題としてスタート
     answerBoard = copyBoard(board);
-    solve(); // answerBoardに解答を格納
+    solve();
     let tempAns = copyBoard(board);
 
-    // バックアップした初期問題の復元
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             if (tempAns[r][c] !== 0) {
@@ -832,14 +902,13 @@ function finishEditMode() {
         }
     }
     
-    // 正解盤面の決定
     answerBoard = tempAns;
 
-    // 初期数字を固定
     initializeFixed();
     initializeMemo();
 
     isEditMode = false;
+    accumulatedTime = 0;
     gameStartTime = millis();
     clearTime = null;
     mistakes = 0;
@@ -850,6 +919,7 @@ function finishEditMode() {
 
     updateEditButtonUI();
     updateNumberButtonsUI();
+    saveGameState();
 }
 
 function updateEditButtonUI() {
@@ -875,9 +945,8 @@ function giveHint() {
     if (gameOver || clearTime !== null || isEditMode) return;
 
     clearHintState();
+    hintCount++;
 
-    // 1. 【裸の単一 (Naked Single)】を探す
-    // マスの周囲に8種類の数字が存在し、入れる数字が1つに確定しているマス
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             if (board[r][c] === 0) {
@@ -888,16 +957,14 @@ function giveHint() {
                     selectedRow = r;
                     selectedCol = c;
                     setHintMessage(`【ヒント: 裸の単一】\n行・列・ブロックの数字から、このマスには「${val}」しか入りません。`);
+                    saveGameState();
                     return;
                 }
             }
         }
     }
 
-    // 2. 【隠れた単一 (Hidden Single)】を探す
-    // 行・列・ブロックの中で、特定の数字が入れる場所が1つしかないマス
     for (let num = 1; num <= 9; num++) {
-        // 行ごとのチェック
         for (let r = 0; r < 9; r++) {
             let possibleCols = [];
             for (let c = 0; c < 9; c++) {
@@ -911,11 +978,11 @@ function giveHint() {
                 selectedRow = r;
                 selectedCol = c;
                 setHintMessage(`【ヒント: 隠れた単一】\n第${r + 1}行の中で数字「${num}」が入れるのはこのマスだけです。`);
+                saveGameState();
                 return;
             }
         }
 
-        // 列ごとのチェック
         for (let c = 0; c < 9; c++) {
             let possibleRows = [];
             for (let r = 0; r < 9; r++) {
@@ -929,11 +996,11 @@ function giveHint() {
                 selectedRow = r;
                 selectedCol = c;
                 setHintMessage(`【ヒント: 隠れた単一】\n第${c + 1}列の中で数字「${num}」が入れるのはこのマスだけです。`);
+                saveGameState();
                 return;
             }
         }
 
-        // 3x3ブロックごとのチェック
         for (let b = 0; b < 9; b++) {
             let startRow = floor(b / 3) * 3;
             let startCol = (b % 3) * 3;
@@ -951,12 +1018,12 @@ function giveHint() {
                 selectedRow = r;
                 selectedCol = c;
                 setHintMessage(`【ヒント: 隠れた単一】\nこの3x3エリアの中で数字「${num}」が入れるのはこのマスだけです。`);
+                saveGameState();
                 return;
             }
         }
     }
 
-    // 3. 上記の基本テクニックで見つからない場合（またはミスしているマスがある場合）：直接正解の1マスを教える
     let emptyCells = [];
     for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
@@ -974,6 +1041,7 @@ function giveHint() {
     selectedRow = cell.row;
     selectedCol = cell.col;
     setHintMessage(`【ヒント】\nこのマスの正解は「${val}」です。`);
+    saveGameState();
 }
 
 function getCandidates(row, col) {
@@ -1051,6 +1119,7 @@ function checkGameClear() {
     if (!gameOver && clearTime === null && !isReplaying && isGameClear()) {
         clearTime = millis();
         isNewBestTime = saveBestTime();
+        clearSavedGameState();
     }
 }
 
@@ -1072,6 +1141,7 @@ function handleRecordToggle() {
 
     updateRecordButtonUI();
     updateReplayUI();
+    saveGameState();
 }
 
 function updateRecordButtonUI() {
@@ -1111,8 +1181,11 @@ function removeMemoNumber(row, col, number) {
 }
 
 function getElapsedSeconds() {
-    let endTime = clearTime === null ? millis() : clearTime;
-    return floor((endTime - gameStartTime) / 1000);
+    if (clearTime !== null) {
+        return floor((clearTime - gameStartTime) / 1000) + accumulatedTime;
+    }
+    let currentSessionSeconds = floor((millis() - gameStartTime) / 1000);
+    return currentSessionSeconds + accumulatedTime;
 }
 
 function formatTime(seconds) {
@@ -1165,38 +1238,6 @@ function countSolutions() {
     }
 }
 
-function removeOneCell() {
-    let row, col;
-    do {
-        row = floor(random(GRID_SIZE));
-        col = floor(random(GRID_SIZE));
-    } while (board[row][col] === 0);
-
-    let backup = board[row][col];
-    board[row][col] = 0;
-    solutionCount = 0;
-    countSolutions();
-
-    if (solutionCount !== 1) {
-        board[row][col] = backup;
-        return false;
-    }
-    return true;
-}
-
-function removeCells(targetRemoveCount) {
-    let failedCount = 0;
-    let removedCount = 0;
-    while (removedCount < targetRemoveCount && failedCount < 100) {
-        if (removeOneCell()) {
-            failedCount = 0;
-            removedCount++;
-        } else {
-            failedCount++;
-        }
-    }
-}
-
 function findEmptyCell() {
     for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
@@ -1206,43 +1247,52 @@ function findEmptyCell() {
     return null;
 }
 
-function isValidMove(row, col, number) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-        if (board[row][c] === number && c !== col) return false;
-    }
-    for (let r = 0; r < GRID_SIZE; r++) {
-        if (board[r][col] === number && r !== row) return false;
+function isValidMove(row, col, num) {
+    for (let i = 0; i < GRID_SIZE; i++) {
+        if (board[row][i] === num) return false;
+        if (board[i][col] === num) return false;
     }
     let startRow = floor(row / 3) * 3;
     let startCol = floor(col / 3) * 3;
     for (let r = startRow; r < startRow + 3; r++) {
         for (let c = startCol; c < startCol + 3; c++) {
-            if (board[r][c] === number && !(r === row && c === col)) return false;
+            if (board[r][c] === num) return false;
         }
     }
     return true;
 }
 
 function getRandomNumbers() {
-    let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    shuffle(numbers, true);
-    return numbers;
+    let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    return shuffle(nums);
 }
 
-function setDifficulty(newDiff) {
-    if (DIFFICULTIES[newDiff]) {
-        difficulty = newDiff;
+function removeCells(count) {
+    let cells = [];
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            cells.push({ row: r, col: c });
+        }
+    }
+    cells = shuffle(cells);
+    for (let i = 0; i < min(count, cells.length); i++) {
+        let cell = cells[i];
+        board[cell.row][cell.col] = 0;
+    }
+}
+
+function setDifficulty(diffKey) {
+    if (DIFFICULTIES[diffKey]) {
+        difficulty = diffKey;
         newGame();
-        updateDifficultyUI();
     }
 }
 
 function updateDifficultyUI() {
-    let diffs = ["easy", "normal", "hard"];
-    diffs.forEach(d => {
-        let btn = document.getElementById(`btn-${d}`);
+    ["easy", "normal", "hard"].forEach(key => {
+        let btn = document.getElementById(`btn-diff-${key}`);
         if (btn) {
-            if (d === difficulty) {
+            if (key === difficulty) {
                 btn.classList.add("active");
             } else {
                 btn.classList.remove("active");
