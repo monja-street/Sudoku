@@ -455,7 +455,7 @@ function draw() {
 
 function drawBoardBackground() {
     noStroke();
-    fill(250, 252, 255);
+    fill(250, 252, 255); // 背景を薄い青色に設定
     rect(0, HEADER_HEIGHT, width, height - HEADER_HEIGHT);
 }
 
@@ -480,10 +480,10 @@ function drawHighlight() {
     // --- A. ヒントのロジック・エリアハイライト表示 ---
     if (hintHighlight && !isEditMode) {
         if (hintHighlight.type === "naked") {
-            fill(255, 182, 193, 180);
+            fill(255, 182, 139, 180); // 薄いピンク色でハイライト
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         } else if (hintHighlight.type === "hidden") {
-            fill(200, 247, 197, 130);
+            fill(200, 247, 197, 130); // 薄い緑色でハイライト
             if (hintHighlight.areaType === "row") {
                 rect(0, HEADER_HEIGHT + hintHighlight.areaIndex * CELL_SIZE, width, CELL_SIZE);
             } else if (hintHighlight.areaType === "col") {
@@ -493,10 +493,10 @@ function drawHighlight() {
                 let bc = (hintHighlight.areaIndex % 3) * 3;
                 rect(bc * CELL_SIZE, HEADER_HEIGHT + br * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
             }
-            fill(120, 220, 120, 200);
+            fill(120, 220, 120, 200); // 薄い緑色でハイライト
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         } else if (hintHighlight.type === "direct") {
-            fill(173, 216, 230, 180);
+            fill(173, 216, 230, 180); // 薄い青色でハイライト
             rect(hintHighlight.col * CELL_SIZE, HEADER_HEIGHT + hintHighlight.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
     }
@@ -505,7 +505,7 @@ function drawHighlight() {
 
     // --- B. 通常の選択マスハイライト ---
     if (isEditMode || !hintHighlight) {
-        fill(235, 243, 253);
+        fill(235, 243, 253); // 薄い青色でハイライト
         rect(0, HEADER_HEIGHT + selectedRow * CELL_SIZE, width, CELL_SIZE);
         rect(selectedCol * CELL_SIZE, HEADER_HEIGHT, CELL_SIZE, GRID_SIZE * CELL_SIZE);
 
@@ -516,7 +516,7 @@ function drawHighlight() {
         let targetNum = board[selectedRow][selectedCol];
 
         if (targetNum !== 0) {
-            fill(254, 240, 138, 220); 
+            fill(254, 240, 138, 220); // 薄い黄色でハイライト
             for (let r = 0; r < 9; r++) {
                 for (let c = 0; c < 9; c++) {
                     if (board[r][c] === targetNum) {
@@ -525,8 +525,14 @@ function drawHighlight() {
                 }
             }
 
-            stroke(231, 76, 60);       
-            strokeWeight(3);           
+            // 間違っている数字が入っている場合のみ赤枠にし、正しく入力・選択された場合は濃い青枠にする
+            if (!isEditMode && isError(selectedRow, selectedCol)) {
+                stroke(231, 76, 60); // 赤色
+            } else {
+                stroke(41, 128, 185); // 濃い青色
+            }
+
+            strokeWeight(3);
             noFill();
             rect(
                 selectedCol * CELL_SIZE + 1.5,
@@ -534,9 +540,9 @@ function drawHighlight() {
                 CELL_SIZE - 3,
                 CELL_SIZE - 3
             );
-            noStroke(); 
+            noStroke();
         } else {
-            fill(160, 201, 255, 180);
+            fill(160, 201, 255, 180); // 薄い青色でハイライト
             rect(selectedCol * CELL_SIZE, HEADER_HEIGHT + selectedRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
     }
@@ -560,12 +566,12 @@ function drawNumbers() {
             let y = HEADER_HEIGHT + r * CELL_SIZE + CELL_SIZE / 2;
 
             if (isEditMode) {
-                fill(44, 62, 80);
+                fill(44, 62, 80); // 濃い色で表示
                 textSize(CELL_SIZE * 0.58);
                 textStyle(BOLD);
                 text(val, x, y);
             } else if (fixed[r][c]) {
-                fill(30, 39, 46);
+                fill(30, 39, 46); // 固定された数字は濃い色で表示
                 textSize(CELL_SIZE * 0.58);
                 textStyle(NORMAL);
                 text(val, x, y);
@@ -573,16 +579,16 @@ function drawNumbers() {
                 let isCorrect = (answerBoard && val === answerBoard[r][c]);
 
                 if (isCorrect) {
-                    fill(41, 128, 185);
+                    fill(41, 128, 185); // 正しい数字は青色で表示
                     textSize(CELL_SIZE * 0.58);
                     textStyle(NORMAL);
                     text(val, x, y);
                 } else {
-                    fill(231, 76, 60, 40);
+                    fill(231, 76, 60, 40); // 間違った数字は赤色で表示
                     noStroke();
                     ellipse(x, y, CELL_SIZE * 0.75);
 
-                    fill(231, 76, 60);
+                    fill(231, 76, 60); // 間違った数字は赤色で表示
                     textSize(CELL_SIZE * 0.58);
                     textStyle(NORMAL);
                     text(val, x, y);
@@ -601,7 +607,7 @@ function drawMemo(row, col) {
     textFont(MAIN_FONT);
     textSize(CELL_SIZE * 0.24);
     textAlign(CENTER, CENTER);
-    fill(127, 140, 141);
+    fill(127, 140, 141); // メモは薄いグレーで表示
     textStyle(NORMAL);
     noStroke();
 
@@ -619,7 +625,7 @@ function drawMemo(row, col) {
 
 function drawStatus() {
     noStroke();
-    fill(255);
+    fill(255); // ヘッダー背景を白で描画
     rect(0, 0, width, HEADER_HEIGHT);
     
     stroke(230);
@@ -632,12 +638,12 @@ function drawStatus() {
         textAlign(CENTER, CENTER);
         textSize(13);
         textStyle(BOLD);
-        fill(230, 126, 34);
+        fill(230, 126, 34); // ヘッダーの文字色をオレンジに設定
         text("【問題入力モード】数字を配置してください", width / 2, HEADER_HEIGHT / 2);
     } else {
         textSize(11);
         textStyle(BOLD);
-        fill(108, 122, 137);
+        fill(108, 122, 137); // ヘッダーの文字色を濃いグレーに設定
 
         let currentBest = getBestTime();
         let bestStr = currentBest ? formatTime(currentBest) : "--:--";
@@ -651,7 +657,7 @@ function drawStatus() {
 }
 
 function drawGameClearMessage() {
-    fill(255, 255, 255, 235);
+    fill(255, 255, 255, 235); // 半透明の白背景
     noStroke();
     rect(0, 0, width, height);
 
@@ -660,36 +666,36 @@ function drawGameClearMessage() {
    
     textSize(32);
     textStyle(BOLD);
-    fill(39, 174, 96);
+    fill(39, 174, 96); // 緑色で表示
     text("VICTORY!", width / 2, height / 2 - 55);
 
     textSize(18);
-    fill(52, 73, 94);
+    fill(52, 73, 94); // 濃いグレーで表示
     textStyle(NORMAL);
     text(`CLEAR TIME : ${formatTime(getElapsedSeconds())}`, width / 2, height / 2 + 10);
 
     textSize(15);
-    fill(231, 76, 60);
+    fill(231, 76, 60); // 赤色で表示
     textStyle(BOLD);
     text(`MISTAKES : ${mistakes}`, width / 2, height / 2 + 65);
 
     textSize(13);
     if (hintCount > 0) {
-        fill(127, 140, 141);
+        fill(127, 140, 141); // 薄いグレーで表示
         text("( Hints Used - No Record )", width / 2, height / 2 + 95);
     } else if (isNewBestTime) {
-        fill(230, 126, 34);
+        fill(230, 126, 34); // オレンジ色で表示
         textStyle(BOLD);
         text("★ NEW BEST RECORD! ★", width / 2, height / 2 + 48);
     } else {
         let bestTime = getBestTime();
-        fill(127, 140, 141);
+        fill(127, 140, 141); // 薄いグレーで表示
         text(`BEST RECORD : ${formatTime(bestTime)}`, width / 2, height / 2 + 48);
     }
 }
 
 function drawGameOverMessage() {
-    fill(255, 255, 255, 235);
+    fill(255, 255, 255, 235); // 半透明の白背景
     noStroke();
     rect(0, 0, width, height);
 
@@ -698,12 +704,12 @@ function drawGameOverMessage() {
 
     textSize(34);
     textStyle(BOLD);
-    fill(231, 76, 60);
+    fill(231, 76, 60); // 赤色で表示
     text("GAME OVER", width / 2, height / 2 - 25);
 
     textSize(14);
     textStyle(NORMAL);
-    fill(127, 140, 141);
+    fill(127, 140, 141); // 薄いグレーで表示
     text("Press 'New Game' to try again", width / 2, height / 2 + 20);
 }
 
