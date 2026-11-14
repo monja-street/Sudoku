@@ -50,15 +50,13 @@ button:active {
    3. ボタンのアクティブ（ON）状態
    ========================================== */
 .button-container button.active,
-#btn-memo.active,
-#btn-replay-play.active {
+#btn-memo.active {
     background: linear-gradient(135deg, #3498db, #2980b9) !important;
     color: #ffffff !important;
     border-color: #2980b9 !important;
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35) !important;
 }
 
-#btn-record.active-rec,
 #btn-edit.active-rec {
     background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
     color: #ffffff !important;
@@ -67,7 +65,7 @@ button:active {
 }
 
 /* ==========================================
-   4. 最上段：難易度 ＆ 記録・再生エリア
+   4. 最上段：難易度 ＆ 問題入力
    ========================================== */
 .button-container {
     display: flex;
@@ -78,7 +76,7 @@ button:active {
     max-width: 500px;
 }
 
-.mode-row, .replay-row {
+.mode-row {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -86,23 +84,11 @@ button:active {
     width: 100%;
 }
 
-.mode-row button, .replay-row button {
+.mode-row button {
     flex: 1;
     padding: 7px 0;
     font-size: 12px;
     border-radius: 8px;
-}
-
-.replay-sub-btn {
-    flex: 0 0 32px !important;
-}
-
-.replay-counter {
-    font-size: 11px;
-    font-weight: bold;
-    color: #555;
-    white-space: nowrap;
-    padding: 0 4px;
 }
 
 /* ==========================================
