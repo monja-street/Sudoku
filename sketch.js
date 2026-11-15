@@ -204,6 +204,7 @@ function draw() {
     drawHighlight();
     drawGrid();
     drawNumbers();
+    drawOcrUncertain();
 
     if (isEditMode) {
         // 問題入力モード用のヘッダー表示
@@ -505,6 +506,7 @@ function setNumber(number) {
 
     if (isEditMode) {
         board[selectedRow][selectedCol] = number;
+        clearOcrUncertainAt(selectedRow, selectedCol);
         return;
     }
 
@@ -609,6 +611,7 @@ function toggleEditMode() {
     if (!isEditMode) {
         clearHintState();
         hideResultPanel();
+        ocrUncertain = [];
         isEditMode = true;
         initializeBoard();
         initializeFixed();

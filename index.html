@@ -12,6 +12,7 @@
 
     <link rel="stylesheet" href="style.css?v=5.1">
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -22,6 +23,8 @@
             <button id="btn-diff-normal" onclick="setDifficulty('normal')">NORMAL</button>
             <button id="btn-diff-hard" onclick="setDifficulty('hard')">HARD</button>
             <button id="btn-edit" onclick="toggleEditMode()">問題入力</button>
+            <button id="btn-photo" onclick="document.getElementById('photo-input').click()">写真から</button>
+            <input type="file" id="photo-input" accept="image/*" style="display: none;">
             <span id="edit-cancel-container" style="display: none;">
                 <button onclick="cancelEditMode()">中止</button>
             </span>
@@ -60,6 +63,20 @@
     <!-- クリア結果表示（盤面の下） -->
     <div id="result-panel" class="result-panel" style="display: none;"></div>
 
-    <script src="sketch.js?v=5.1"></script>
+    <!-- 写真取り込み用オーバーレイ -->
+    <div id="photo-overlay">
+        <div class="photo-box">
+            <div id="photo-guide"></div>
+            <canvas id="photo-canvas"></canvas>
+            <div class="photo-buttons">
+                <button id="photo-reset">やり直し</button>
+                <button id="photo-cancel">キャンセル</button>
+        </div>
+    </div>
+
+
+    <script src="sketch.js?v=5.2"></script>
+    <script src="sketch.js?v=5.2"></script>
+    <script src="photo.js?v=5.2"></script>
 </body>
 </html>

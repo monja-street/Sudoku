@@ -207,3 +207,48 @@ button:active {
 .result-panel .result-mistakes { color: #e74c3c; }
 .result-panel .result-best     { color: #e67e22; }
 .result-panel .result-note     { font-size: 12px; color: #7f8c8d; }
+
+/* ==========================================
+   9. 写真取り込みオーバーレイ
+   ========================================== */
+#photo-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 30, 40, 0.88);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+#photo-guide {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+
+#photo-canvas {
+    background: #000;
+    border-radius: 6px;
+    touch-action: none;
+}
+
+.photo-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.photo-buttons button {
+    padding: 9px 18px;
+    font-size: 13px;
+    border-radius: 8px;
+}
