@@ -175,3 +175,35 @@ button:active {
     width: 100% !important;
     height: auto !important;
 }
+
+/* ==========================================
+   8. クリア結果パネル（盤面の下）
+   ========================================== */
+.result-panel {
+    width: 100%;
+    max-width: 500px;
+    margin: 8px auto 0 auto;
+    padding: 12px 14px;
+    background: #ffffff;
+    border-left: 4px solid #27ae60;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    line-height: 1.6;
+}
+
+.result-panel .result-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #27ae60;
+}
+
+.result-panel .result-row {
+    font-size: 14px;
+    font-weight: 700;
+    color: #34495e;
+}
+
+.result-panel .result-mistakes { color: #e74c3c; }
+.result-panel .result-best     { color: #e67e22; }
+.result-panel .result-note     { font-size: 12px; color: #7f8c8d; }

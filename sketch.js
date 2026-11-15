@@ -137,7 +137,7 @@ function clearSavedGameState() {
 
 function newGame() {
     clearSavedGameState();
-
+    hideResultPanel();
     clearHintState();
     isEditMode = false;
     editMessage = "";
@@ -209,9 +209,8 @@ function draw() {
         // 問題入力モード用のヘッダー表示
     } else if (gameOver) {
         drawGameOverMessage();
-    } else if (clearTime !== null) {
-        drawGameClearMessage();
-    }
+    } 
+    // クリア時は盤面を隠さず、下のパネルに表示する。
 
     drawStatus();
 }
@@ -419,44 +418,6 @@ function drawStatus() {
     }
 }
 
-function drawGameClearMessage() {
-    fill(255, 255, 255, 235);
-    noStroke();
-    rect(0, 0, width, height);
-
-    textFont(MAIN_FONT);
-    textAlign(CENTER, CENTER);
-
-    textSize(32);
-    textStyle(BOLD);
-    fill(39, 174, 96);
-    text("VICTORY!", width / 2, height / 2 - 55);
-
-    textSize(18);
-    fill(52, 73, 94);
-    textStyle(NORMAL);
-    text(`CLEAR TIME : ${formatTime(getElapsedSeconds())}`, width / 2, height / 2 + 10);
-
-    textSize(15);
-    fill(231, 76, 60);
-    textStyle(BOLD);
-    text(`MISTAKES : ${mistakes}`, width / 2, height / 2 + 65);
-
-    textSize(13);
-    if (hintCount > 0) {
-        fill(127, 140, 141);
-        text("( Hints Used - No Record )", width / 2, height / 2 + 95);
-    } else if (isNewBestTime) {
-        fill(230, 126, 34);
-        textStyle(BOLD);
-        text("★ NEW BEST RECORD! ★", width / 2, height / 2 + 48);
-    } else {
-        let bestTime = getBestTime();
-        fill(127, 140, 141);
-        text(`BEST RECORD : ${formatTime(bestTime)}`, width / 2, height / 2 + 48);
-    }
-}
-
 function drawGameOverMessage() {
     fill(255, 255, 255, 235);
     noStroke();
@@ -474,6 +435,49 @@ function drawGameOverMessage() {
     textStyle(NORMAL);
     fill(127, 140, 141);
     text("Press 'New Game' to try again", width / 2, height / 2 + 20);
+}
+
+function showResultPanel() {
+    let el = document.getElementById("result-panel");
+    if (!el) return;
+
+    let noteHtml = "";
+    if (hintCount > 0) {
+        noteHtml = `<div class="result-note">( Hints Used - No Record )</div>`;
+    } else if (isNewBestTime) {
+        noteHtml = `<div class="result-row result-best">★ NEW BEST RECORD! ★</div>`;
+    } else {
+        let best = getBestTime();
+        noteHtml = `<div class="result-row">BEST RECORD : ${best !== null ? formatTime(best) : "--:--"}</div>`;
+    }
+
+    el.innerHTML =
+        `<div class="result-title">VICTORY!</div>` +
+        `<div class="result-row">MODE : ${DIFFICULTIES[difficulty] ? DIFFICULTIES[difficulty].label : "CUSTOM"}</div>` +
+        `<div class="result-row">CLEAR TIME : ${formatTime(getElapsedSeconds())}</div>` +
+        `<div class="result-row result-mistakes">MISTAKES : ${mistakes}</div>` +
+        noteHtml;
+    el.style.display = "block";
+}
+
+function checkGameClear() {
+    if (!gameOver && clearTime === null && isGameClear()) {
+        clearTime = millis();
+        isNewBestTime = saveBestTime();
+        clearSavedGameState();
+        selectedRow = -1;   // 選択ハイライトを消して、きれいな最終盤面にする
+        selectedCol = -1;
+        clearHintState();
+        showResultPanel();
+    }
+}
+
+function hideResultPanel() {
+    let el = document.getElementById("result-panel");
+    if (el) {
+        el.style.display = "none";
+        el.innerHTML = "";
+    }
 }
 
 function saveState() {
@@ -604,6 +608,7 @@ function updateNumberButtonsUI() {
 function toggleEditMode() {
     if (!isEditMode) {
         clearHintState();
+        hideResultPanel();
         isEditMode = true;
         initializeBoard();
         initializeFixed();
@@ -870,14 +875,6 @@ function isGameClear() {
         }
     }
     return true;
-}
-
-function checkGameClear() {
-    if (!gameOver && clearTime === null && isGameClear()) {
-        clearTime = millis();
-        isNewBestTime = saveBestTime();
-        clearSavedGameState();
-    }
 }
 
 function removeRelatedMemos(row, col, number) {
