@@ -244,7 +244,13 @@ button:active {
 
 .photo-buttons {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.photo-buttons button:disabled {
+    opacity: 0.4;
 }
 
 .photo-buttons button {
