@@ -10,18 +10,19 @@
     <meta name="theme-color" content="#3498db">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <link rel="stylesheet" href="style.css?v=5.1">
+    <link rel="stylesheet" href="style.css?v=5.2">
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 </head>
 <body>
 
-    <!-- 1. 最上段：難易度 ＆ 問題入力 -->
+    <!-- 1. 最上段：難易度 ＆ NewGame ＆ 問題入力 ＆ 写真 -->
     <div class="button-container">
         <div class="mode-row">
-            <button id="btn-diff-easy" onclick="setDifficulty('easy')">EASY</button>
-            <button id="btn-diff-normal" onclick="setDifficulty('normal')">NORMAL</button>
-            <button id="btn-diff-hard" onclick="setDifficulty('hard')">HARD</button>
+            <button id="btn-diff-easy" onclick="requestDifficulty('easy')">EASY</button>
+            <button id="btn-diff-normal" onclick="requestDifficulty('normal')">NORMAL</button>
+            <button id="btn-diff-hard" onclick="requestDifficulty('hard')">HARD</button>
+            <button onclick="requestNewGame()">New Game</button>
             <button id="btn-edit" onclick="toggleEditMode()">問題入力</button>
             <button id="btn-photo" onclick="document.getElementById('photo-input').click()">写真から</button>
             <input type="file" id="photo-input" accept="image/*" style="display: none;">
@@ -31,16 +32,11 @@
         </div>
     </div>
 
-    <!-- 2. 中段：基本操作 ＋ 数字キー -->
-    <div id="controls">
-        <div class="action-row">
-            <button onclick="undo()">戻す</button>
-            <button id="btn-memo" onclick="handleMemoToggle()">メモ: OFF</button>
-            <button onclick="handleErase()">消去</button>
-            <button onclick="giveHint()">ヒント</button>
-            <button onclick="newGame()">New Game</button>
-        </div>
+    <!-- 2. 中段：キャンバス領域（盤面） -->
+    <div id="canvas-container"></div>
 
+    <!-- 3. 下段：数字キー ＋ 基本操作 -->
+    <div id="controls">
         <div class="number-row">
             <button id="btn-num-1" onclick="handleNumberInput(1)">1</button>
             <button id="btn-num-2" onclick="handleNumberInput(2)">2</button>
@@ -52,15 +48,19 @@
             <button id="btn-num-8" onclick="handleNumberInput(8)">8</button>
             <button id="btn-num-9" onclick="handleNumberInput(9)">9</button>
         </div>
+
+        <div class="action-row">
+            <button onclick="undo()">戻す</button>
+            <button onclick="handleErase()">消去</button>
+            <button id="btn-memo" onclick="handleMemoToggle()">メモ: OFF</button>
+            <button onclick="giveHint()">ヒント</button>
+        </div>
     </div>
 
     <!-- ヒント解説表示用メッセージボックス -->
     <div id="hint-message-box" class="hint-box" style="display: none;"></div>
 
-    <!-- 3. 下段：キャンバス領域 -->
-    <div id="canvas-container"></div>
-
-    <!-- クリア結果表示（盤面の下） -->
+    <!-- クリア結果表示 -->
     <div id="result-panel" class="result-panel" style="display: none;"></div>
 
     <!-- 写真取り込み用オーバーレイ -->
@@ -74,11 +74,10 @@
                 <button id="photo-run" disabled>認識開始</button>
                 <button id="photo-cancel">キャンセル</button>
             </div>
+        </div>
     </div>
 
-
-    <script src="sketch.js?v=5.3"></script>
-    <script src="sketch.js?v=5.3"></script>
-    <script src="photo.js?v=5.3"></script>
+    <script src="sketch.js?v=5.5"></script>
+    <script src="photo.js?v=5.5"></script>
 </body>
 </html>

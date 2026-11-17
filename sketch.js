@@ -833,14 +833,14 @@ function mousePressed() {
 }
 
 function keyPressed() {
-    if (key === 'e' || key === 'E') { setDifficulty("easy"); return; }
-    if (key === 'd' || key === 'D') { setDifficulty("normal"); return; }
-    if (key === 'h' || key === 'H') { setDifficulty("hard"); return; }
+    if (key === 'e' || key === 'E') { requestDifficulty("easy"); return; }
+    if (key === 'd' || key === 'D') { requestDifficulty("normal"); return; }
+    if (key === 'h' || key === 'H') { requestDifficulty("hard"); return; }
 
     if (key === 'z' || key === 'Z' || key === 'u' || key === 'U') { undo(); return; }
     if (key === 'm' || key === 'M') { handleMemoToggle(); return; }
     if (key === 'g' || key === 'G') { giveHint(); return; }
-    if (key === 'n' || key === 'N') { newGame(); return; }
+    if (key === 'n' || key === 'N') { requestNewGame(); return; }
 
     if (keyCode === LEFT_ARROW) moveSelection(0, -1);
     if (keyCode === RIGHT_ARROW) moveSelection(0, 1);
@@ -1022,4 +1022,32 @@ function updateDifficultyUI() {
             }
         }
     });
+}
+
+// --- 進行中ゲームの破棄確認 ---
+
+// 盤面に何か操作をしている（数字・メモを入れた）かどうか
+function hasProgress() {
+    if (isEditMode) {
+        // 問題入力中は、数字を1つでも置いていれば進行中とみなす
+        return board.some(row => row.some(v => v !== 0));
+    }
+    if (gameOver || clearTime !== null) return false;
+    return historyStack.length > 0;
+}
+
+function confirmDiscard() {
+    if (!hasProgress()) return true;
+    let msg = isEditMode
+        ? "入力中の問題は破棄されます。よろしいですか？"
+        : "進行中のゲームは破棄されます。よろしいですか？";
+    return confirm(msg);
+}
+
+function requestNewGame() {
+    if (confirmDiscard()) newGame();
+}
+
+function requestDifficulty(diffKey) {
+    if (confirmDiscard()) setDifficulty(diffKey);
 }

@@ -97,10 +97,10 @@ button:active {
 #controls {
     width: 100%;
     max-width: 500px;
-    margin: 0 auto 8px auto;
+    margin: 8px auto 8px auto;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .action-row {
@@ -112,8 +112,8 @@ button:active {
 
 .action-row button {
     flex: 1;
-    padding: 9px 0;
-    font-size: 12px;
+    padding: 12px 0;
+    font-size: 13px;
     border-radius: 8px;
 }
 
